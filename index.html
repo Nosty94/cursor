@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#060b1a" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="format-detection" content="telephone=no" />
+    <title>NEON ASCENT — Eclipse Edition</title>
+    <meta
+      name="description"
+      content="NEON ASCENT — аркадный космический шутер. Волна за волной, боссы, корабли и неон."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect fill='%23050b18' width='64' height='64' rx='14'/%3E%3Cpath d='M32 8 L40 28 L54 40 L32 34 L10 40 L24 28 Z' fill='%2382eaff'/%3E%3C/svg%3E"
+    />
+    <style>
+      html, body {
+        margin: 0; background: #050916; width: 100%; height: 100%; overflow: hidden;
+        overscroll-behavior: none; -webkit-user-select: none; user-select: none;
+        -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+      }
+      #splash {
+        position: fixed; inset: 0; display: grid; place-items: center; align-content: center; gap: 10px;
+        color: #7be8ff; font: 800 22px/1 system-ui, sans-serif; letter-spacing: 0.32em; text-align: center;
+      }
+      #splash small { color: #6f93a8; font: 600 12px system-ui, sans-serif; letter-spacing: 0.1em; }
+      #fatal {
+        position: fixed; inset: 0; z-index: 9999; display: none; place-items: center; padding: 16px;
+        background: #050916; color: #eefaff; font: 14px/1.5 system-ui, sans-serif; overflow: auto;
+        -webkit-user-select: text; user-select: text;
+      }
+      #fatal .box { max-width: 640px; width: 100%; text-align: left; }
+      #fatal h1 { margin: 0 0 8px; font: 800 22px/1.2 system-ui, sans-serif; color: #ffd98a; letter-spacing: 0; }
+      #fatal p { margin: 0 0 10px; color: #bfd3e2; }
+      #fatal code { padding: 1px 6px; border-radius: 6px; background: #12283c; color: #9fefff; }
+      #fatal pre {
+        max-height: 40vh; overflow: auto; margin: 12px 0; padding: 12px;
+        border: 1px solid #ff7492; border-radius: 10px; background: #2a0f1a; color: #ffd9e0;
+        font: 12px/1.5 Consolas, monospace; white-space: pre-wrap;
+      }
+      #fatal pre:empty { display: none; }
+      #fatal button {
+        padding: 11px 18px; border: 0; border-radius: 12px; background: #7be8ff; color: #052430;
+        font: 700 15px system-ui, sans-serif; cursor: pointer;
+      }
+    </style>
+    <script>
+      /* Start-up watchdog. The page must never sit on "loading…" forever: if the game
+         does not mount, tell the player why and what to do. */
+      (function () {
+        var ru = String(navigator.language || "ru").toLowerCase().indexOf("ru") === 0;
+        var T = ru
+          ? {
+              srcTitle: "Это исходный файл, а не готовая игра",
+              src: "Этот <code>index.html</code> из папки проекта. Он ссылается на исходники и работает только внутри сборки. Откройте готовый файл <code>dist/index.html</code> (создаётся командой <code>npm run build</code>) — он полностью автономный. Для публикации на Яндекс Играх загрузите zip, в корне которого лежит именно этот собранный <code>index.html</code>.",
+              slowTitle: "Игра загружается дольше обычного",
+              slow: "Если ничего не происходит: обновите страницу (Ctrl+F5), проверьте, что JavaScript включён, и попробуйте современный браузер (Chrome, Яндекс Браузер, Firefox, Safari).",
+              crashTitle: "Игра не смогла запуститься",
+              reload: "Перезагрузить",
+            }
+          : {
+              srcTitle: "This is the source file, not the built game",
+              src: "This <code>index.html</code> comes from the project folder. It points at source files and only works inside a build. Open the built <code>dist/index.html</code> (created by <code>npm run build</code>) — it is fully standalone. To publish on Yandex Games, upload a zip that has this built <code>index.html</code> at its root.",
+              slowTitle: "The game is taking longer than usual",
+              slow: "If nothing happens: hard-refresh (Ctrl+F5), make sure JavaScript is enabled, and try a modern browser (Chrome, Yandex Browser, Firefox, Safari).",
+              crashTitle: "The game failed to start",
+              reload: "Reload",
+            };
+
+        // React replaces the whole #root content on first render, which removes #splash.
+        function mounted() { return !document.getElementById("splash"); }
+
+        function show(title, html, detail) {
+          var box = document.getElementById("fatal");
+          if (!box || mounted()) return;
+          box.querySelector("h1").textContent = title;
+          box.querySelector("p").innerHTML = html;
+          box.querySelector("pre").textContent = detail || "";
+          box.querySelector("button").textContent = T.reload;
+          box.style.display = "grid";
+        }
+
+        // capture:true also catches failed <script src> loads, which do not bubble.
+        window.addEventListener("error", function (e) {
+          if (mounted()) return;
+          var t = e.target;
+          if (t && t !== window && t.tagName === "SCRIPT") {
+            show(T.srcTitle, T.src, (t.src || "") + "\n" + location.protocol + "//");
+            return;
+          }
+          show(T.crashTitle, T.slow, (e.error && e.error.stack) || e.message || "Unknown error");
+        }, true);
+
+        window.addEventListener("unhandledrejection", function (e) {
+          if (mounted()) return;
+          show(T.crashTitle, T.slow, String((e.reason && e.reason.stack) || e.reason));
+        });
+
+        setTimeout(function () {
+          if (!mounted()) show(T.slowTitle, T.slow, "");
+        }, 6000);
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root">
+      <div id="splash">NEON ASCENT<small>loading…</small></div>
+    </div>
+    <noscript>
+      <div style="position:fixed;inset:0;display:grid;place-items:center;background:#050916;color:#eefaff;font:16px system-ui,sans-serif;text-align:center;padding:16px">
+        Включите JavaScript, чтобы играть в NEON ASCENT.<br />Enable JavaScript to play NEON ASCENT.
+      </div>
+    </noscript>
+    <div id="fatal" role="alert">
+      <div class="box">
+        <h1></h1>
+        <p></p>
+        <pre></pre>
+        <button type="button" onclick="location.reload()"></button>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
